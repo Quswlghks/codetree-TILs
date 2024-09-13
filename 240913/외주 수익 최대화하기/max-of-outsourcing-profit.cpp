@@ -1,83 +1,33 @@
 #include <iostream>
+#include <vector>
+#include <algorithm>
 
 using namespace std;
 
-int n;
-pair<int,int> tp[15];
-int isUsed[15];
-int result=0;
+int maxProfit(int n, vector<pair<int, int>>& jobs) {
+    vector<int> dp(n + 1, 0);
 
-void Input(){
-    cin >> n;
-    for(int i =0 ; i<n;i++){
-        cin >> tp[i].first >>tp[i].second;
-    }
-}
-
-int isVal(const int isUsed[]){
-    //유효한지 확인하고 그렇다면 얼마나 돈주는지.
-    int temp[15]; int result =0;
-    for(int i =0;i<15;i++) temp[i] =0;
-    for(int i=0;i<n;i++){
-        if(isUsed[i]==1){ //일하면 i~i+tp[i].first-1까지 1을 더해
-            for(int j = i; j<=i+tp[i].first-1; j++){
-                if(j>=n){
-                    temp[0]=2;
-                    temp[j]++;
-                }
-                temp[j]++;
-            }
-            
+    for (int i = n - 1; i >= 0; i--) {
+        if (i + jobs[i].first > n) {
+            dp[i] = dp[i + 1];
+        } else {
+            dp[i] = max(dp[i + 1], jobs[i].second + dp[i + jobs[i].first]);
         }
     }
 
-    for(int i=0;i<n;i++){ //겹치는거 존재
-        if(temp[i]>1) return -1;
-    }
-
-
-    for(int i =0;i<n;i++){
-        switch(temp[i]){
-            case 0:
-                //아무일도 안함.
-            break;
-            case 1://i~i+tp[i].first-1까지 일하고 tp[i].second 돈 받음
-                result+=tp[i].second;//out<<"i, p : "<<i<<" "<<tp[i].second<<"\n";
-                i = i+tp[i].first-1;
-            break;
-        }
-    }
-    //cout<<"\nresult : "<<result<<"\n";
-
-    return result;
-}
-
-void backtracking(int i, int what, const int isUsed[]){
-    int tempUsed[15];
-    for(int i=0;i<15;i++) tempUsed[i]=isUsed[i];
-    tempUsed[i] = what;
-
-    if(i==n-1){
-        
-        if(isVal(tempUsed) > result){
-             result = isVal(tempUsed);
-             return;
-        }
-        return;
-    }
-    
-    backtracking(i+1, 0, tempUsed);
-    backtracking(i+1, 1, tempUsed);
-}
-
-void Solve(){
-    backtracking(0, 0, isUsed);
-    backtracking(0, 1, isUsed);
-
-    cout<<result;
+    return dp[0];
 }
 
 int main() {
-    Input();
-    Solve();
+    int n;
+    cin >> n;
+
+    vector<pair<int, int>> jobs(n);
+    for (int i = 0; i < n; i++) {
+        cin >> jobs[i].first >> jobs[i].second;
+    }
+
+    cout << maxProfit(n, jobs) << endl;
+
+    return 0;
 }

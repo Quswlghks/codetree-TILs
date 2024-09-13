@@ -108,7 +108,7 @@ int main() {
     queue<Case> q;
     q.push(first);
 
-    int result = 0;
+    int result = -1;
 
     while(!q.empty()){
         Case temp = q.front(); q.pop();
@@ -118,7 +118,7 @@ int main() {
         }
         if(temp.Red.x == temp.Goal.x && temp.Red.y == temp.Goal.y){
             if(!(temp.Blue.x == temp.Goal.x && temp.Blue.y == temp.Goal.y)){
-                result = temp.num;
+                result = temp.num+1;
                 break;
             }
             continue; // 파란 구슬도 구멍에 들어갔으면 실패

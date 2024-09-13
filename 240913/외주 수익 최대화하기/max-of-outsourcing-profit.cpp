@@ -20,13 +20,21 @@ int isVal(const int isUsed[]){
     for(int i =0;i<15;i++) temp[i] =0;
     for(int i=0;i<n;i++){
         if(isUsed[i]==1){ //일하면 i~i+tp[i].first-1까지 1을 더해
-            for(int j = i; j<i+tp[i].first; j++) temp[j]++;
+            for(int j = i; j<=i+tp[i].first-1; j++){
+                if(j>=n){
+                    temp[0]=2;
+                    temp[j]++;
+                }
+                temp[j]++;
+            }
+            
         }
     }
 
     for(int i=0;i<n;i++){ //겹치는거 존재
         if(temp[i]>1) return -1;
     }
+
 
     for(int i =0;i<n;i++){
         switch(temp[i]){

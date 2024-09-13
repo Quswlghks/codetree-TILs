@@ -118,7 +118,7 @@ int main() {
         }
         if(temp.Red.x == temp.Goal.x && temp.Red.y == temp.Goal.y){
             if(!(temp.Blue.x == temp.Goal.x && temp.Blue.y == temp.Goal.y)){
-                result = temp.num+1;
+                result = temp.num;
                 break;
             }
             continue; // 파란 구슬도 구멍에 들어갔으면 실패

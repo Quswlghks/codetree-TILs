@@ -29,14 +29,13 @@ int isVal(const int isUsed[]){
     }
 
     for(int i =0;i<n;i++){
-        //cout<<"\ntemp: "<<temp[i]<<"\n";
         switch(temp[i]){
             case 0:
                 //아무일도 안함.
             break;
             case 1://i~i+tp[i].first-1까지 일하고 tp[i].second 돈 받음
-                result+=tp[i].second;
-                i = i+tp[i].first;
+                result+=tp[i].second;//out<<"i, p : "<<i<<" "<<tp[i].second<<"\n";
+                i = i+tp[i].first-1;
             break;
         }
     }
@@ -51,9 +50,7 @@ void backtracking(int i, int what, const int isUsed[]){
     tempUsed[i] = what;
 
     if(i==n-1){
-        for(int asdf =0; asdf <= i; asdf++){
-            //cout << tempUsed[asdf]<<" ";
-        }
+        
         if(isVal(tempUsed) > result){
              result = isVal(tempUsed);
              return;

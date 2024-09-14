@@ -72,19 +72,19 @@ int BFS(int i, int x, int y, int dir){
     queue<pair<int,int>> q; vector<pair<int,int>> v; 
     visited[x][y]=true;visited[x-1][y]=true;visited[x+1][y]=true;visited[x][y-1]=true;visited[x][y+1]=true;
     q.push({x+dx[dir],y+dy[dir]}); v.push_back({x+dx[dir],y+dy[dir]});
-    int qx, qy; int now = i+1;
+    int qx, qy; vector<int> now; now.push_back(i+1);
     while(!q.empty()){
         qx = q.front().first; qy = q.front().second; q.pop();
         if(!(qx>=3&&qx<=R+1&&y>=1&&y<=C)) continue;
         //cout<<"qx : "<<qx<<" "<<"qy : "<<qy<<"\n";
         for(int i = 0; i < 4; i++){
             int nx = qx+dx[i]; int ny = qy+dy[i];
-            if((Board[nx][ny]==now) && !visited[nx][ny]){
+            if((Board[nx][ny]!=0&&!count(now.begin(),now.end(),Board[nx][ny])) && !visited[nx][ny]){
             visited[nx][ny]=1; 
             q.push({nx,ny});
             v.push_back({nx,ny});//cout<<"change gollem!\n"<<nx-2<<" "<<ny<<"\n";printBoard();
-            }else if((Board[nx][ny]!=0) && !visited[nx][ny]&&Board[qx][qy]==-1){
-            visited[nx][ny]=1; now = Board[nx][ny];
+            }else if(!visited[nx][ny]&&Board[qx][qy]==-1){
+            visited[nx][ny]=1; now.push_back(Board[nx][ny]);
             q.push({nx,ny});
             v.push_back({nx,ny});//cout<<"change gollem!\n"<<nx-2<<" "<<ny<<"\n";printBoard();
             }
@@ -114,7 +114,7 @@ int Move(int i, int x, int y, int dir){
     Board[x+dx[dir]][y+dy[dir]]=-1;
 
     //search
-    int temp = BFS(i,x,y, dir);// cout<<"move : "<<temp<<"\n";
+    int temp = BFS(i,x,y, dir); //cout<<"move : "<<temp<<"\n";
     return temp;
 }
 

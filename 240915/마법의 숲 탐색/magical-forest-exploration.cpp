@@ -1,134 +1,194 @@
 #include <iostream>
-#include <queue>
 #include <vector>
+#include <queue>
 #include <algorithm>
 using namespace std;
+int R, C, K, ans;
 
-int R,C;
-int K;
-int c[1001];
-int d[1001];
+int dy[4] = { 1,-1,0,0 };
+int dx[4] = { 0,0,1,-1 };
 
-int result;
+// 0은 빈칸, 나머지는 골렘 번호
+// 낙하지점을 0으로 시작하면 세로 길이 +2 하기
+int Map[73][73];
+// 출구 확인 
+bool golem_exit[73][73];
+// d : (0,1,2,3) = (북,동,남,서)
+struct golem_info {
+	int c, d;
+};
 
-// 0,1,2,3은 북, 동, 남, 서
-int dx[] = {-1,0,1,0};
-int dy[] = {0,1,0,-1};
+vector<golem_info>golem;
 
-int Board[100][100];
-
-void Input(){
-    cin >> R >> C >> K;
-    for(int i = 0; i < K; i++){
-        cin >> c[i] >> d[i];
-    }
+void input() {
+	cin >> R >> C >> K;
+	for (int i = 0; i < K; i++) {
+		int c, d;
+		cin >> c >> d;
+		golem.push_back({ c,d });
+	}
 }
 
-void printBoard(){
-    cout<<"Board : \n";
-    for(int i = 3; i <= R+2; i++){
-        for(int j = 1; j < C+1; j++){
-            cout<<Board[i][j]<<" ";
-        }cout<<"\n";
-    }
+bool isValid(int y, int x) {
+	return Map[y][x] == 0 && Map[y - 1][x] == 0 && Map[y + 1][x] == 0 && Map[y][x - 1] == 0 && Map[y][x + 1] == 0 && y <= R + 1 && x >= 2 && x <= C-1;
 }
 
-void Init(){
-    //cout << "Init! Reason: " << reason << "\n";
-    for(int i = 0; i <= R+2; i++){
-        for(int j = 0; j < C+1; j++){
-            Board[i][j] = 0;
-        }
-    }
+bool isValid2(int y, int x) {
+	return y <= R + 2 && x >= 1 && x <= C && Map[y][x] != 0;
 }
 
-int canGo(int x, int y, int dir){
-    switch(dir){
-        case 0:
-            return false;
-        break;
-        case 1:
-            if(y+2<=C&&!Board[x-1][y+1]&&!Board[x][y+2]&&!Board[x+1][y+1]&&!Board[x][y+1]) return true;
-            return false;
-        break;
-        case 2:
-            if(x+2<=R+2&&!Board[x+1][y+1]&&!Board[x+1][y-1]&&!Board[x+2][y]&&!Board[x+1][y]) return true;
-            return false;
-        break;
-        case 3:
-            if(y-2>=1&&!Board[x-1][y-1]&&!Board[x][y-2]&&!Board[x+1][y-1]&&!Board[x][y-1]) return true;
-            return false;
-        break;
-    }
+bool isValid3(int y, int x,int num) {
+	return y <= R + 2 && x >= 1 && x <= C && Map[y][x]==num;
 }
 
-// pair first 기준 내림차순 정렬
-bool compare1(pair<int, int> a, pair<int, int> b) {
-	return a.first > b.first;
+void mapRemove() {
+	for (int i = 0; i < 73; i++) {
+		for (int j = 0; j < 73; j++) {
+			Map[i][j] = 0;
+			golem_exit[i][j] = false;
+		}
+	}
 }
 
-int BFS(int i, int x, int y, int dir){
-    int visited[100][100];for(int i = 0; i < 100; i++){for(int j = 0; j < 100; j++){visited[i][j] = 0;}}
-    queue<pair<int,int>> q; vector<pair<int,int>> v; 
-    visited[x][y]=true;visited[x-1][y]=true;visited[x+1][y]=true;visited[x][y-1]=true;visited[x][y+1]=true;
-    q.push({x+dx[dir],y+dy[dir]}); v.push_back({x+dx[dir],y+dy[dir]});
-    int qx, qy; vector<int> now; now.push_back(i+1);
-    while(!q.empty()){
-        qx = q.front().first; qy = q.front().second; q.pop();
-        if(!(qx>=3&&qx<=R+1&&y>=1&&y<=C)) continue;
-        //cout<<"qx : "<<qx<<" "<<"qy : "<<qy<<"\n";
-        for(int i = 0; i < 4; i++){
-            int nx = qx+dx[i]; int ny = qy+dy[i];
-            if((Board[nx][ny]!=0&&!count(now.begin(),now.end(),Board[nx][ny])) && !visited[nx][ny]){
-            visited[nx][ny]=1; 
-            q.push({nx,ny});
-            v.push_back({nx,ny});//cout<<"change gollem!\n"<<nx-2<<" "<<ny<<"\n";printBoard();
-            }else if(!visited[nx][ny]&&Board[qx][qy]==-1){
-            visited[nx][ny]=1; now.push_back(Board[nx][ny]);
-            q.push({nx,ny});
-            v.push_back({nx,ny});//cout<<"change gollem!\n"<<nx-2<<" "<<ny<<"\n";printBoard();
-            }
-        }
-    }
-    sort(v.begin(),v.end(), compare1); //cout<<"move : "<<v[0].first-2<<" "<<v[0].second<<"\n";
-    //cout<<"x+1-2 : "<<x-1<<"\n";
-    if(v[0].first-2 > x+1-2) return v[0].first-2;
-    else return x-1;
-    
+void bfs(int y,int x,int num) {
+	queue<pair<int, int>>q;
+	int max_y = y;
+	// 첫 십자 좌표 체크 및 4방향 좌표 큐에 추가
+	bool visited[73][73] = { false };
+	visited[y][x] = true;
+	for (int i = 0; i < 4; i++) {
+		int ny = y + dy[i];
+		int nx = x + dx[i];
+		visited[ny][nx] = true;
+		q.push({ ny,nx });
+	}
+
+	// 지금 위치가 출구 또는 지금 위치가 출구가 아닐 때 2가지로 나눔
+	while (!q.empty()) {
+		pair<int, int> now = q.front();
+		q.pop();
+		visited[now.first][now.second] = true;
+
+		// 최대 y좌표 갱신
+		max_y = max(max_y, now.first);
+		// 지금 위치가 출구일 때
+		if (golem_exit[now.first][now.second]) {
+			for (int i = 0; i < 4; i++) {
+				int ny = now.first + dy[i];
+				int nx = now.second + dx[i];
+				if (visited[ny][nx])continue;
+				// 다음 위치가 빈칸이 아니면 추가
+				if (!isValid2(ny, nx))continue;
+				visited[ny][nx] = true;
+				q.push({ ny,nx });
+			}
+		}
+		// 지금 위치가 출구가 아닐 때
+		else if (Map[now.first][now.second] >=1) {
+			for (int i = 0; i < 4; i++) {
+				int ny = now.first + dy[i];
+				int nx = now.second + dx[i];
+				if (visited[ny][nx])continue;
+				// 다음 위치가 자신의 골렘 번호일 때만 추가
+				if (!isValid3(ny, nx,Map[now.first][now.second]))continue;
+				visited[ny][nx] = true;
+				q.push({ ny,nx });
+			}
+		}
+	}
+	// 정답 추가
+	ans += max_y - 2;
 }
 
-int Move(int i, int x, int y, int dir){
-    if(canGo(x,y,2)) {return Move(i,x+1,y,dir);}
-    if(canGo(x,y,3)&&canGo(x,y-1,2)) {return Move(i,x+1,y-1,dir==0 ? 3 : dir-1);}
-    if(canGo(x,y,1)&&canGo(x,y+1,2)) {return Move(i,x+1,y+1,dir==3 ? 0 : dir+1);}
+void moveGolem(golem_info a,int num) {
+	// R x C 맵에서 시작 중앙점은 (0,C)
+	// 실제 맵은 2행부터 있음!
+	int sR = 0;
+	int sC = a.c;
+	int sD = a.d;
+	
+	while (1) {
+		// 남쪽
+		sR++;
+		if (isValid(sR,sC)) {
+			continue;
+		}
+		sR--;
+		// 서쪽
+		sC--;
+		if (isValid(sR,sC)) {
+			sR++;
+			if (isValid(sR, sC)) {
+				if (sD == 0)sD = 3;
+				else sD--;
+				continue;
+			}
+			else {
+				sR--;
+			}
+		}
+		sC++;
+		// 동쪽
+		sC++;
+		if (isValid(sR,sC)) {
+			sR++;
+			if (isValid(sR, sC)) {
+				sD = (sD + 1) % 4;
+				continue;
+			}
+			else {
+				sR--;
+			}
+		}
+		sC--;
+		// 3가지 다 안되면 종료
+		break;
+	}
 
-    if(x<=3){
-        Init(); return 0;
-    }
-    //update
-    Board[x][y]=1+i;
-    Board[x+1][y]=1+i;
-    Board[x][y+1]=1+i;
-    Board[x-1][y]=1+i;
-    Board[x][y-1]=1+i;
-    Board[x+dx[dir]][y+dy[dir]]=-1;
+	// 이동 후 맵 밖이면 초기화
+	if (sR <= 3) {
+		mapRemove();
+		return;
+	}
+	// 이동 후 맵 안이면 적용
+	else {
+		Map[sR][sC] = num;
+		Map[sR-1][sC] = num;
+		Map[sR+1][sC] = num;
+		Map[sR][sC - 1] = num;
+		Map[sR][sC + 1] = num;
+		// 북
+		if (sD == 0) {
+			golem_exit[sR - 1][sC] = true;
+		}
+		// 동
+		else if (sD == 1) {
+			golem_exit[sR][sC + 1] = true;
+		}
+		// 남
+		else if (sD == 2) {
+			golem_exit[sR + 1][sC] = true;
+		}
+		// 서
+		else if (sD == 3) {
+			golem_exit[sR][sC - 1] = true;
+		}
 
-    //search
-    int temp = BFS(i,x,y, dir); //cout<<"move : "<<temp<<"\n";
-    return temp;
+		// 도착 후 맵에서 BFS를 통한 최종 목적지 구하기
+		bfs(sR,sC,num);
+	}
+
 }
 
-void Solve(){
-    for(int i = 0; i < K; i++){
-        int temp = Move(i,1,c[i],d[i]);
-        result += temp;
-        //printBoard();
-    }
-    cout << result;
+void func() {
+	for (int i = 0; i < K; i++) {
+		moveGolem(golem[i],i+1);
+	}
+	cout << ans;
 }
 
 int main() {
-    Input();
-    Solve();
-    return 0;
+	input();
+	func();
+	return 0;
 }

@@ -26,7 +26,7 @@ void Input(){
 
 void printBoard(){
     cout<<"Board : \n";
-    for(int i = 0; i <= R+2; i++){
+    for(int i = 3; i <= R+2; i++){
         for(int j = 1; j < C+1; j++){
             cout<<Board[i][j]<<" ";
         }cout<<"\n";
@@ -98,7 +98,7 @@ int Move(int i, int x, int y, int dir){
     if(canGo(x,y,3)&&canGo(x,y-1,2)) {return Move(i,x+1,y-1,dir==0 ? 3 : dir-1);}
     if(canGo(x,y,1)&&canGo(x,y+1,2)) {return Move(i,x+1,y+1,dir==3 ? 0 : dir+1);}
 
-    if(x<=2){
+    if(x<=3){
         Init(); return 0;
     }
     //update
@@ -110,7 +110,7 @@ int Move(int i, int x, int y, int dir){
     Board[x+dx[dir]][y+dy[dir]]=2;
 
     //search
-    int temp = BFS(x,y, dir);// cout<<"move : "<<temp<<"\n";
+    int temp = BFS(x,y, dir); //cout<<"move : "<<temp<<"\n";
     return temp;
 }
 
@@ -118,8 +118,7 @@ void Solve(){
     for(int i = 0; i < K; i++){
         int temp = Move(i,1,c[i],d[i]);
         result += temp;
-       // printBoard();
-        //cout << "move : " << temp-1 << "\n";
+        //printBoard();
     }
     cout << result;
 }

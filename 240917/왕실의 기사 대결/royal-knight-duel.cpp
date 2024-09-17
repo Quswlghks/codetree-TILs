@@ -9,8 +9,8 @@ int Board[40][40];
 int knightBoard[40][40];
 pair<int,int> order[100];
 
-int dx[4] = {-1, 0, 1, 0};
-int dy[4] = {0, 1, 0, -1};
+int dx[] = {-1,0,1,0};  // 위, 오른쪽, 아래, 왼쪽 순서로 변경
+int dy[] = {0,1,0,-1};
 
 class Knight{
 public:
@@ -23,7 +23,7 @@ public:
     Knight(){}
     void init(int pr, int pc,int ph,int pw,int pk,int i){
         this->index = i;
-        r=pr; c=pc; h=ph; w=pw; k=pk;
+        r=pr-1; c=pc-1; h=ph; w=pw; k=pk;  // 0-based 인덱스로 변경
         for(int i = r; i < r+h; i++){
             for(int j=c;j<c+w;j++){
                 knightBoard[i][j] = index;
@@ -35,7 +35,7 @@ public:
             for(int j=0;j<L;j++){
                 if(newKnightBoard[i][j]==this->index){
                     this->r = i; this->c = j;
-                    return;
+                    return;  // 위치를 찾았으면 바로 종료
                 }
             }
         }
@@ -43,41 +43,59 @@ public:
 };
 Knight knight[30];
 
+// 주어진 위치가 체스판 내부인지 확인하는 함수
+bool checkIsIn(int x, int y){
+    return x >= 0 && x < L && y >= 0 && y < L;
+}
+
+// BFS를 위한 구조체 정의
+struct Position {
+    int x, y;
+    Position(int x, int y) : x(x), y(y) {}
+};
+
 class Case{
 public:
     bool isvalid = true;
     int knightBoard[40][40];
     Knight knight[30];
 
-    // 수정된 부분: BFS 함수를 vector<pair<int, int>>를 반환하도록 변경
-    vector<pair<int, int>> BFS(int x, int y, int d){
-        vector<pair<int, int>> moved;
-        queue<pair<int, int>> q;
-        vector<vector<bool>> visited(L, vector<bool>(L, false));
-        q.push({x, y});
-        visited[x][y] = true;
+    // BFS 함수 구현
+    void BFS(int startX, int startY, int d){
+        queue<Position> q;
+        vector<Position> moved;
+        bool visited[40][40] = {false};
+
+        q.push(Position(startX, startY));
+        visited[startX][startY] = true;
 
         while(!q.empty()){
-            int cx = q.front().first;
-            int cy = q.front().second;
+            Position current = q.front();
             q.pop();
 
-            int nx = cx + dx[d];
-            int ny = cy + dy[d];
+            int nx = current.x + dx[d];
+            int ny = current.y + dy[d];
 
-            if(nx < 0 || nx >= L || ny < 0 || ny >= L || Board[nx][ny] == 2){
+            if(!checkIsIn(nx, ny) || Board[nx][ny] == 2){
                 isvalid = false;
-                return moved;
+                return;
             }
-
-            moved.push_back({cx, cy});
 
             if(knightBoard[nx][ny] != -1 && !visited[nx][ny]){
-                q.push({nx, ny});
+                q.push(Position(nx, ny));
                 visited[nx][ny] = true;
             }
+
+            moved.push_back(current);
         }
-        return moved;
+
+        // 기사들을 이동시킴
+        for(auto pos : moved){
+            int nx = pos.x + dx[d];
+            int ny = pos.y + dy[d];
+            knightBoard[nx][ny] = knightBoard[pos.x][pos.y];
+            knightBoard[pos.x][pos.y] = -1;
+        }
     }
 
     Case(int i, int d){
@@ -95,44 +113,38 @@ public:
             }
         }
 
+        // 기사가 이미 죽었거나 체스판에서 사라졌다면 명령 무시
         if(!this->knight[i].islive){
             isvalid = false;
             return;
         }
 
-        // 수정된 부분: BFS 결과를 vector로 받아 처리
-        vector<pair<int, int>> moved = BFS(this->knight[i].r, this->knight[i].c, d);
+        // BFS 실행
+        BFS(this->knight[i].r, this->knight[i].c, d);
 
         if(isvalid){
-            // 기사 이동 처리
-            for(int j = moved.size() - 1; j >= 0; j--){
-                int cx = moved[j].first;
-                int cy = moved[j].second;
-                int nx = cx + dx[d];
-                int ny = cy + dy[d];
-                knightBoard[nx][ny] = knightBoard[cx][cy];
-                knightBoard[cx][cy] = -1;
-            }
-
-            // 기사 위치 및 대미지 업데이트
+            // 기사들의 위치 업데이트
             for(int index=0;index<N;index++){
                 this->knight[index].update(this->knightBoard);
-                if(index != i && this->knight[index].islive){
-                    int trapCount = 0;
-                    for(int r = this->knight[index].r; r < this->knight[index].r + this->knight[index].h; r++){
-                        for(int c = this->knight[index].c; c < this->knight[index].c + this->knight[index].w; c++){
-                            if(Board[r][c] == 1) trapCount++;
+            }
+
+            // 함정에 의한 데미지 계산
+            for(int index=0;index<N;index++){
+                if(index != i && this->knight[index].islive){  // 명령받은 기사는 제외
+                    int damage = 0;
+                    for(int x = this->knight[index].r; x < this->knight[index].r + this->knight[index].h; x++){
+                        for(int y = this->knight[index].c; y < this->knight[index].c + this->knight[index].w; y++){
+                            if(Board[x][y] == 1) damage++;
                         }
                     }
-                    if(trapCount > 0) {  // 수정된 부분: 함정에 걸렸을 때만 대미지 적용
-                        this->knight[index].damage += trapCount;
-                        this->knight[index].k -= trapCount;
-                        if(this->knight[index].k <= 0){
-                            this->knight[index].islive = false;
-                            for(int r = this->knight[index].r; r < this->knight[index].r + this->knight[index].h; r++){
-                                for(int c = this->knight[index].c; c < this->knight[index].c + this->knight[index].w; c++){
-                                    this->knightBoard[r][c] = -1;
-                                }
+                    this->knight[index].k -= damage;
+                    this->knight[index].damage += damage;
+                    if(this->knight[index].k <= 0){
+                        this->knight[index].islive = false;
+                        // 죽은 기사 제거
+                        for(int x = this->knight[index].r; x < this->knight[index].r + this->knight[index].h; x++){
+                            for(int y = this->knight[index].c; y < this->knight[index].c + this->knight[index].w; y++){
+                                this->knightBoard[x][y] = -1;
                             }
                         }
                     }
@@ -144,7 +156,9 @@ public:
 
 void applyCase(Case now){
     memcpy(knightBoard, now.knightBoard, sizeof(knightBoard));
-    for(int i=0;i<N;i++){knight[i] = now.knight[i];}
+    for(int i=0;i<N;i++){
+        knight[i] = now.knight[i];
+    }
 }
 
 void Input(){
@@ -157,12 +171,12 @@ void Input(){
     for(int i=0;i<N;i++){
         int r,c,h,w,k;
         cin >> r >> c >> h >> w >> k;
-        knight[i].init(r-1,c-1,h,w,k,i);
+        knight[i].init(r,c,h,w,k,i);
     }
     for(int index=0;index<Q;index++){
         int i, d;
         cin >> i >> d;
-        order[index].first = i-1; order[index].second = d-1;
+        order[index].first = i-1; order[index].second = d-1;  // 0-based 인덱스로 변경
     }
 }
 
@@ -174,7 +188,7 @@ void Solve(){
     int result = 0;
     for(int i=0;i<N;i++){
         if(knight[i].islive){
-            result+=knight[i].damage;
+            result += knight[i].damage;
         }
     }
     cout << result;

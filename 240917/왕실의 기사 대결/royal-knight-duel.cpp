@@ -1,208 +1,139 @@
 #include <iostream>
-#include <queue>
 #include <vector>
-#include <cstring>
+#include <queue>
+#include <unordered_map>
+#include <unordered_set>
 using namespace std;
 
 int L, N, Q;
-int Board[40][40];
-int knightBoard[40][40];
-pair<int,int> order[100];
+vector<vector<int>> Board;
+unordered_map<int, vector<int>> sirs;
+unordered_map<int, int> damage;
+vector<pair<int, int>> order;
 
-int dx[] = {-1,0,1,0};  // 위, 오른쪽, 아래, 왼쪽 순서로 변경
-int dy[] = {0,1,0,-1};
+int dx[] = {-1, 0, 1, 0};
+int dy[] = {0, 1, 0, -1};
 
-class Knight{
-public:
-    int index;
-    int r,c;
-    int h,w;
-    int k;
-    bool islive = true;
-    int damage = 0;
-    Knight(){}
-    void init(int pr, int pc,int ph,int pw,int pk,int i){
-        this->index = i;
-        r=pr-1; c=pc-1; h=ph; w=pw; k=pk;  // 0-based 인덱스로 변경
-        for(int i = r; i < r+h; i++){
-            for(int j=c;j<c+w;j++){
-                knightBoard[i][j] = index;
-            }
-        }
-    }
-    void update(int newKnightBoard[40][40]){
-        for(int i=0;i<L;i++){
-            for(int j=0;j<L;j++){
-                if(newKnightBoard[i][j]==this->index){
-                    this->r = i; this->c = j;
-                    return;  // 위치를 찾았으면 바로 종료
-                }
-            }
-        }
-    }
-};
-Knight knight[30];
-
-// 주어진 위치가 체스판 내부인지 확인하는 함수
-bool checkIsIn(int x, int y){
-    return x >= 0 && x < L && y >= 0 && y < L;
-}
-
-// 한글 주석: 기사의 이동 가능 여부를 확인하는 함수 추가
-bool canMove(int knightIndex, int d) {
-    Knight& k = knight[knightIndex];
-    for(int i = k.r; i < k.r + k.h; i++) {
-        for(int j = k.c; j < k.c + k.w; j++) {
-            int ni = i + dx[d], nj = j + dy[d];
-            if(!checkIsIn(ni, nj) || Board[ni][nj] == 2) return false;
-        }
-    }
-    return true;
-}
-
-// 한글 주석: 기사를 이동시키는 함수 추가
-void moveKnight(int knightIndex, int d) {
-    Knight& k = knight[knightIndex];
-    // 한글 주석: 기존 위치의 knightBoard 초기화
-    for(int i = k.r; i < k.r + k.h; i++) {
-        for(int j = k.c; j < k.c + k.w; j++) {
-            knightBoard[i][j] = -1;
-        }
-    }
-    // 한글 주석: 새 위치로 기사 이동
-    k.r += dx[d]; k.c += dy[d];
-    for(int i = k.r; i < k.r + k.h; i++) {
-        for(int j = k.c; j < k.c + k.w; j++) {
-            knightBoard[i][j] = knightIndex;
+// 한글 주석: 기사의 좌표를 얻는 함수
+void get_xy(const vector<int>& arr, vector<pair<int, int>>& temp) {
+    int r = arr[0], c = arr[1], h = arr[2], w = arr[3];
+    for (int x = r; x < r + h; ++x) {
+        for (int y = c; y < c + w; ++y) {
+            temp.push_back({x, y});
         }
     }
 }
 
-class Case{
-public:
-    bool isvalid = true;
-    int knightBoard[40][40];
-    Knight knight[30];
-
-    // 한글 주석: BFS 대신 직접 이동 로직 구현
-    void moveKnights(int startKnight, int d) {
-        vector<int> toMove;
-        vector<bool> checked(N, false);
-        toMove.push_back(startKnight);
-        checked[startKnight] = true;
-
-        for(int i = 0; i < toMove.size(); i++) {
-            int current = toMove[i];
-            Knight& k = knight[current];
-            for(int r = k.r; r < k.r + k.h; r++) {
-                for(int c = k.c; c < k.c + k.w; c++) {
-                    int nr = r + dx[d], nc = c + dy[d];
-                    if(checkIsIn(nr, nc) && knightBoard[nr][nc] != -1 && !checked[knightBoard[nr][nc]]) {
-                        toMove.push_back(knightBoard[nr][nc]);
-                        checked[knightBoard[nr][nc]] = true;
-                    }
-                }
-            }
-        }
-
-        // 한글 주석: 이동 가능 여부 확인
-        for(int i : toMove) {
-            if(!canMove(i, d)) {
-                isvalid = false;
-                return;
-            }
-        }
-
-        // 한글 주석: 실제 이동 수행
-        for(int i = toMove.size() - 1; i >= 0; i--) {
-            moveKnight(toMove[i], d);
-        }
-    }
-
-    Case(int i, int d){
-        memcpy(knightBoard, ::knightBoard, sizeof(knightBoard));
-        for(int index=0;index<N;index++){
-            this->knight[index] = ::knight[index];
-        }
-
-        // 한글 주석: 기사가 이미 죽었거나 체스판에서 사라졌다면 명령 무시
-        if(!this->knight[i].islive){
-            isvalid = false;
-            return;
-        }
-
-        // 한글 주석: 기사들 이동
-        moveKnights(i, d);
-
-        if(isvalid){
-            // 한글 주석: 데미지 계산 및 적용
-            for(int index=0;index<N;index++){
-                if(index != i && this->knight[index].islive){  // 명령받은 기사는 제외
-                    int newDamage = 0;
-                    for(int x = this->knight[index].r; x < this->knight[index].r + this->knight[index].h; x++){
-                        for(int y = this->knight[index].c; y < this->knight[index].c + this->knight[index].w; y++){
-                            if(Board[x][y] == 1) newDamage++;
-                        }
-                    }
-                    this->knight[index].k -= newDamage;
-                    this->knight[index].damage += newDamage;
-                    if(this->knight[index].k <= 0){
-                        this->knight[index].islive = false;
-                        // 한글 주석: 죽은 기사 제거
-                        for(int x = this->knight[index].r; x < this->knight[index].r + this->knight[index].h; x++){
-                            for(int y = this->knight[index].c; y < this->knight[index].c + this->knight[index].w; y++){
-                                this->knightBoard[x][y] = -1;
-                            }
-                        }
-                    }
-                }
-            }
-        }
-    }
-};
-
-void applyCase(Case now){
-    memcpy(knightBoard, now.knightBoard, sizeof(knightBoard));
-    for(int i=0;i<N;i++){
-        knight[i] = now.knight[i];
-    }
+// 한글 주석: 체스판 내부인지 확인하는 함수
+bool is_board(int x, int y) {
+    return 0 <= x && x < L && 0 <= y && y < L;
 }
 
-void Input(){
-    cin >> L >> N >> Q;
-    for(int i=0;i<L;i++){
-        for(int j=0;j<L;j++){
-            cin >> Board[i][j];
+// 한글 주석: 기사 이동 함수
+unordered_set<int> move_sirs(int i, int d) {
+    // 한글 주석: 체스판에서 삭제된 기사 이동 명령
+    if (sirs.find(i) == sirs.end()) return {};
+
+    unordered_map<int, vector<pair<int, int>>> states;
+    for (const auto& kv : sirs) {
+        vector<pair<int, int>> temp;
+        get_xy(kv.second, temp);
+        states[kv.first] = temp;
+    }
+
+    queue<pair<int, int>> q;
+    unordered_set<int> moved_sir;
+    get_xy(sirs[i], vector<pair<int, int>>(q));
+    moved_sir.insert(i);
+
+    while (!q.empty()) {
+        int x = q.front().first, y = q.front().second;
+        q.pop();
+        int nx = x + dx[d], ny = y + dy[d];
+
+        if (!is_board(nx, ny)) return {};
+
+        for (const auto& kv : states) {
+            if (find(kv.second.begin(), kv.second.end(), make_pair(nx, ny)) != kv.second.end() &&
+                moved_sir.find(kv.first) == moved_sir.end()) {
+                moved_sir.insert(kv.first);
+                get_xy(sirs[kv.first], vector<pair<int, int>>(q));
+            }
         }
+
+        if (Board[nx][ny] == 2) return {};
     }
-    for(int i=0;i<N;i++){
-        int r,c,h,w,k;
-        cin >> r >> c >> h >> w >> k;
-        knight[i].init(r,c,h,w,k,i);
+
+    for (int idx : moved_sir) {
+        sirs[idx][0] += dx[d];
+        sirs[idx][1] += dy[d];
     }
-    for(int index=0;index<Q;index++){
-        int i, d;
-        cin >> i >> d;
-        order[index].first = i-1; order[index].second = d-1;  // 0-based 인덱스로 변경
-    }
+
+    return moved_sir;
 }
 
-void Solve(){
-    for(int i=0;i<Q;i++){
-        Case now(order[i].first, order[i].second);
-        if(now.isvalid) applyCase(now);
+// 한글 주석: 데미지 계산 함수
+void get_damage(const unordered_set<int>& moved_sir, int id) {
+    if (moved_sir.empty()) return;
+
+    unordered_map<int, vector<pair<int, int>>> states;
+    for (int idx : moved_sir) {
+        vector<pair<int, int>> temp;
+        get_xy(sirs[idx], temp);
+        states[idx] = temp;
     }
-    int result = 0;
-    for(int i=0;i<N;i++){
-        if(knight[i].islive){
-            result += knight[i].damage;
+
+    for (const auto& kv : states) {
+        int cnt = 0;
+        for (const auto& pos : kv.second) {
+            if (Board[pos.first][pos.second] == 1) ++cnt;
+        }
+
+        if (cnt >= sirs[kv.first][4]) {
+            damage[kv.first] = 0;
+            sirs.erase(kv.first);
+        } else {
+            sirs[kv.first][4] -= cnt;
+            damage[kv.first] += cnt;
         }
     }
-    cout << result;
 }
 
 int main() {
-    Input();
-    Solve();
+    cin >> L >> N >> Q;
+    Board.resize(L, vector<int>(L));
+    for (int i = 0; i < L; ++i) {
+        for (int j = 0; j < L; ++j) {
+            cin >> Board[i][j];
+        }
+    }
+
+    for (int i = 1; i <= N; ++i) {
+        int r, c, h, w, k;
+        cin >> r >> c >> h >> w >> k;
+        sirs[i] = {r-1, c-1, h, w, k};
+        damage[i] = 0;
+    }
+
+    for (int i = 0; i < Q; ++i) {
+        int knight, direction;
+        cin >> knight >> direction;
+        order.push_back({knight, direction-1});
+    }
+
+    for (const auto& cmd : order) {
+        unordered_set<int> moved_sir = move_sirs(cmd.first, cmd.second);
+        if (!moved_sir.empty()) {
+            moved_sir.erase(cmd.first);
+            get_damage(moved_sir, cmd.first);
+        }
+    }
+
+    int total_damage = 0;
+    for (const auto& kv : damage) {
+        total_damage += kv.second;
+    }
+    cout << total_damage << endl;
+
     return 0;
 }

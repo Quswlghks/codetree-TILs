@@ -48,11 +48,35 @@ bool checkIsIn(int x, int y){
     return x >= 0 && x < L && y >= 0 && y < L;
 }
 
-// BFS를 위한 구조체 정의
-struct Position {
-    int x, y;
-    Position(int x, int y) : x(x), y(y) {}
-};
+// 한글 주석: 기사의 이동 가능 여부를 확인하는 함수 추가
+bool canMove(int knightIndex, int d) {
+    Knight& k = knight[knightIndex];
+    for(int i = k.r; i < k.r + k.h; i++) {
+        for(int j = k.c; j < k.c + k.w; j++) {
+            int ni = i + dx[d], nj = j + dy[d];
+            if(!checkIsIn(ni, nj) || Board[ni][nj] == 2) return false;
+        }
+    }
+    return true;
+}
+
+// 한글 주석: 기사를 이동시키는 함수 추가
+void moveKnight(int knightIndex, int d) {
+    Knight& k = knight[knightIndex];
+    // 한글 주석: 기존 위치의 knightBoard 초기화
+    for(int i = k.r; i < k.r + k.h; i++) {
+        for(int j = k.c; j < k.c + k.w; j++) {
+            knightBoard[i][j] = -1;
+        }
+    }
+    // 한글 주석: 새 위치로 기사 이동
+    k.r += dx[d]; k.c += dy[d];
+    for(int i = k.r; i < k.r + k.h; i++) {
+        for(int j = k.c; j < k.c + k.w; j++) {
+            knightBoard[i][j] = knightIndex;
+        }
+    }
+}
 
 class Case{
 public:
@@ -60,88 +84,71 @@ public:
     int knightBoard[40][40];
     Knight knight[30];
 
-    // BFS 함수 구현
-    void BFS(int startX, int startY, int d){
-        queue<Position> q;
-        vector<Position> moved;
-        bool visited[40][40] = {false};
+    // 한글 주석: BFS 대신 직접 이동 로직 구현
+    void moveKnights(int startKnight, int d) {
+        vector<int> toMove;
+        vector<bool> checked(N, false);
+        toMove.push_back(startKnight);
+        checked[startKnight] = true;
 
-        q.push(Position(startX, startY));
-        visited[startX][startY] = true;
-
-        while(!q.empty()){
-            Position current = q.front();
-            q.pop();
-
-            int nx = current.x + dx[d];
-            int ny = current.y + dy[d];
-
-            if(!checkIsIn(nx, ny) || Board[nx][ny] == 2){
-                isvalid = false;
-                return;
-            }
-
-            if(knightBoard[nx][ny] != -1 && !visited[nx][ny]){
-                q.push(Position(nx, ny));
-                visited[nx][ny] = true;
-            }
-
-            moved.push_back(current);
-        }
-
-        // 기사들을 이동시킴
-        for(auto pos : moved){
-            int nx = pos.x + dx[d];
-            int ny = pos.y + dy[d];
-            knightBoard[nx][ny] = knightBoard[pos.x][pos.y];
-            knightBoard[pos.x][pos.y] = -1;
-        }
-    }
-
-    Case(int i, int d){
-        memset(knightBoard, -1, sizeof(knightBoard));
-        for(int index=0;index<N;index++){
-            this->knight[index] = ::knight[index];
-            int r = knight[index].r;
-            int c = knight[index].c;
-            int h = knight[index].h;
-            int w = knight[index].w;
-            for(int i = r; i < r+h; i++){
-                for(int j=c;j<c+w;j++){
-                    this->knightBoard[i][j] = index;
+        for(int i = 0; i < toMove.size(); i++) {
+            int current = toMove[i];
+            Knight& k = knight[current];
+            for(int r = k.r; r < k.r + k.h; r++) {
+                for(int c = k.c; c < k.c + k.w; c++) {
+                    int nr = r + dx[d], nc = c + dy[d];
+                    if(checkIsIn(nr, nc) && knightBoard[nr][nc] != -1 && !checked[knightBoard[nr][nc]]) {
+                        toMove.push_back(knightBoard[nr][nc]);
+                        checked[knightBoard[nr][nc]] = true;
+                    }
                 }
             }
         }
 
-        // 기사가 이미 죽었거나 체스판에서 사라졌다면 명령 무시
+        // 한글 주석: 이동 가능 여부 확인
+        for(int i : toMove) {
+            if(!canMove(i, d)) {
+                isvalid = false;
+                return;
+            }
+        }
+
+        // 한글 주석: 실제 이동 수행
+        for(int i = toMove.size() - 1; i >= 0; i--) {
+            moveKnight(toMove[i], d);
+        }
+    }
+
+    Case(int i, int d){
+        memcpy(knightBoard, ::knightBoard, sizeof(knightBoard));
+        for(int index=0;index<N;index++){
+            this->knight[index] = ::knight[index];
+        }
+
+        // 한글 주석: 기사가 이미 죽었거나 체스판에서 사라졌다면 명령 무시
         if(!this->knight[i].islive){
             isvalid = false;
             return;
         }
 
-        // BFS 실행
-        BFS(this->knight[i].r, this->knight[i].c, d);
+        // 한글 주석: 기사들 이동
+        moveKnights(i, d);
 
         if(isvalid){
-            // 기사들의 위치 업데이트
-            for(int index=0;index<N;index++){
-                this->knight[index].update(this->knightBoard);
-            }
-
-            // 함정에 의한 데미지 계산
+            // 한글 주석: 데미지 계산 및 적용
             for(int index=0;index<N;index++){
                 if(index != i && this->knight[index].islive){  // 명령받은 기사는 제외
-                    int damage = 0;
+                    int newDamage = 0;
                     for(int x = this->knight[index].r; x < this->knight[index].r + this->knight[index].h; x++){
                         for(int y = this->knight[index].c; y < this->knight[index].c + this->knight[index].w; y++){
-                            if(Board[x][y] == 1) damage++;
+                            if(Board[x][y] == 1) newDamage++;
                         }
                     }
-                    this->knight[index].k -= damage;
-                    this->knight[index].damage += damage;
+                    this->knight[index].k -= newDamage;
+                    this->knight[index].damage += newDamage;
                     if(this->knight[index].k <= 0){
                         this->knight[index].islive = false;
-                        // 죽은 기사 제거
+                        // 한글 주석: 죽은 기사 제거
                         for(int x = this->knight[index].r; x < this->knight[index].r + this->knight[index].h; x++){
                             for(int y = this->knight[index].c; y < this->knight[index].c + this->knight[index].w; y++){
                                 this->knightBoard[x][y] = -1;

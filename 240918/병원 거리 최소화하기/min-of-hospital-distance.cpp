@@ -1,74 +1,77 @@
 #include <iostream>
+#include <cmath>
 #include <vector>
-#include <algorithm>
-#include <climits>
 
 using namespace std;
 
-const int MAX_N = 50;
-const int MAX_M = 13;
+int Map[51][51];
+// 빈칸0, 사람1, 병원2
+int n,m;
+vector<pair<int,int>> pointHospital;
+vector<pair<int,int>> pointHuman;
+vector<bool> selectHospital;
+int result = 1000000;
 
-int n, m;
-vector<pair<int, int>> hospitals, people;
-int dist[MAX_N * MAX_N][MAX_M];
-int result = INT_MAX;
-
-void input() {
+void Input(){
     cin >> n >> m;
-    for (int i = 0; i < n; i++) {
-        for (int j = 0; j < n; j++) {
-            int x;
-            cin >> x;
-            if (x == 1) people.push_back({i, j});
-            else if (x == 2) hospitals.push_back({i, j});
-        }
-    }
-}
-
-int manhattan_distance(pair<int, int> a, pair<int, int> b) {
-    return abs(a.first - b.first) + abs(a.second - b.second);
-}
-
-void precalculate_distances() {
-    for (int i = 0; i < people.size(); i++) {
-        for (int j = 0; j < hospitals.size(); j++) {
-            dist[i][j] = manhattan_distance(people[i], hospitals[j]);
-        }
-    }
-}
-
-void solve(int idx, int count, vector<int>& selected) {
-    if (count == m) {
-        int total_dist = 0;
-        for (int i = 0; i < people.size(); i++) {
-            int min_dist = INT_MAX;
-            for (int j : selected) {
-                min_dist = min(min_dist, dist[i][j]);
+    for(int i=0;i<n;i++){
+        for(int j=0;j<n;j++){
+            cin >> Map[i][j];
+            if(Map[i][j]==2){
+                pointHospital.push_back({i,j});
+            }else if(Map[i][j]==1){
+                pointHuman.push_back({i,j});
             }
-            total_dist += min_dist;
         }
-        result = min(result, total_dist);
-        return;
     }
-    
-    if (idx >= hospitals.size()) return;
-    
-    // 현재 병원 선택
-    selected.push_back(idx);
-    solve(idx + 1, count + 1, selected);
-    selected.pop_back();
-    
-    // 현재 병원 선택하지 않음
-    solve(idx + 1, count, selected);
+}
+
+int calDistance(int x1, int y1, int x2, int y2){return abs(x2-x1) + abs(y2-y1);}
+
+int calAllDistance(vector<bool> PselectHospital){
+    int returnresult = 0;
+    int minDis = 10000000;
+    //cout<<"start!!\n";
+    for(int i=0;i<pointHuman.size();i++){
+        int x1 = pointHuman[i].first;
+        int y1 = pointHuman[i].second;
+        for(int j=0;j<pointHospital.size();j++){
+            int x2 = pointHospital[j].first;
+            int y2 = pointHospital[j].second;
+            //cout<<x1<<" "<<y1<<" "<<x2<<" "<<y2<<"\n";
+            int temp = calDistance(x1,y1,x2,y2);
+            if(temp < minDis) minDis = temp;
+        }returnresult+=minDis;
+    }return returnresult;
+}
+
+void Backtracking(vector<bool> PselectHospital){
+    if(PselectHospital.size()==m){
+        //for(int i=0;i<PselectHospital.size();i++)cout<<PselectHospital[i]<<" ";
+        bool checkM = false;
+        int counttemp=0;
+        for(int i=0;i<PselectHospital.size();i++){
+            if(PselectHospital[i])counttemp++;
+        }
+        if(counttemp==m) checkM=true;
+        if(checkM)
+        {int temp = calAllDistance(PselectHospital);//cout<<temp<<"\n";
+        if(result > temp) {result = temp;return;}}
+        return; 
+    }
+    PselectHospital.push_back(true);
+    Backtracking(PselectHospital);
+    PselectHospital.pop_back();PselectHospital.push_back(false);
+    Backtracking(PselectHospital); return;
+}
+
+void Solve(){
+    Backtracking(selectHospital);
+    cout << result;
 }
 
 int main() {
-    input();
-    precalculate_distances();
-    
-    vector<int> selected;
-    solve(0, 0, selected);
-    
-    cout << result << endl;
+    Input();
+    Solve();
     return 0;
 }

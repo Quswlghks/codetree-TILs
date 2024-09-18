@@ -1,6 +1,7 @@
 #include <iostream>
 #include <cmath>
 #include <vector>
+#include <climits> // INT_MAX를 사용하기 위해 추가
 
 using namespace std;
 
@@ -9,8 +10,7 @@ int Map[51][51];
 int n,m;
 vector<pair<int,int>> pointHospital;
 vector<pair<int,int>> pointHuman;
-vector<bool> selectHospital;
-int result = 1000000;
+int result = INT_MAX; // 수정: 초기값을 INT_MAX로 변경
 
 void Input(){
     cin >> n >> m;
@@ -28,45 +28,46 @@ void Input(){
 
 int calDistance(int x1, int y1, int x2, int y2){return abs(x2-x1) + abs(y2-y1);}
 
-int calAllDistance(vector<bool> PselectHospital){
+int calAllDistance(const vector<bool>& PselectHospital){
     int returnresult = 0;
-    int minDis = 10000000;
-    //cout<<"start!!\n";
     for(int i=0;i<pointHuman.size();i++){
+        int minDis = INT_MAX; // 수정: 각 사람마다 최소 거리를 INT_MAX로 초기화
         int x1 = pointHuman[i].first;
         int y1 = pointHuman[i].second;
         for(int j=0;j<pointHospital.size();j++){
-            int x2 = pointHospital[j].first;
-            int y2 = pointHospital[j].second;
-            //cout<<x1<<" "<<y1<<" "<<x2<<" "<<y2<<"\n";
-            int temp = calDistance(x1,y1,x2,y2);
-            if(temp < minDis) minDis = temp;
-        }returnresult+=minDis;
-    }return returnresult;
+            if(PselectHospital[j]){
+                int x2 = pointHospital[j].first;
+                int y2 = pointHospital[j].second;
+                int temp = calDistance(x1,y1,x2,y2);
+                if(temp < minDis) minDis = temp;
+            }
+        }
+        returnresult += minDis; // 수정: 각 사람의 최소 거리를 더함
+    }
+    return returnresult;
 }
 
-void Backtracking(vector<bool> PselectHospital){
-    if(PselectHospital.size()==m){
-        //for(int i=0;i<PselectHospital.size();i++)cout<<PselectHospital[i]<<" ";
-        bool checkM = false;
-        int counttemp=0;
-        for(int i=0;i<PselectHospital.size();i++){
-            if(PselectHospital[i])counttemp++;
-        }
-        if(counttemp==m) checkM=true;
-        if(checkM)
-        {int temp = calAllDistance(PselectHospital);//cout<<temp<<"\n";
-        if(result > temp) {result = temp;return;}}
-        return; 
+void Backtracking(int index, int count, vector<bool>& PselectHospital){
+    // 수정: 백트래킹 함수의 매개변수와 종료 조건 변경
+    if(count == m){
+        int temp = calAllDistance(PselectHospital);
+        if(result > temp) result = temp;
+        return;
     }
-    PselectHospital.push_back(true);
-    Backtracking(PselectHospital);
-    PselectHospital.pop_back();PselectHospital.push_back(false);
-    Backtracking(PselectHospital); return;
+    if(index >= pointHospital.size()) return; // 수정: 모든 병원을 고려했을 때 종료
+
+    // 현재 병원 선택
+    PselectHospital[index] = true;
+    Backtracking(index + 1, count + 1, PselectHospital);
+    
+    // 현재 병원 선택하지 않음
+    PselectHospital[index] = false;
+    Backtracking(index + 1, count, PselectHospital);
 }
 
 void Solve(){
-    Backtracking(selectHospital);
+    vector<bool> selectHospital(pointHospital.size(), false);
+    Backtracking(0, 0, selectHospital); // 수정: 백트래킹 함수 호출 방식 변경
     cout << result;
 }
 

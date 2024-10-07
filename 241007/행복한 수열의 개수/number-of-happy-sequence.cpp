@@ -11,6 +11,7 @@ int main() {
             cin >> Map[i][j];
         }
     }
+    if(n==1){cout<<"2";return 0;}
     for(int i=0;i<n;i++){
         int count = 1;
         for(int j=1;j<n;j++){

@@ -14,6 +14,7 @@ int main() {
     for(int i=0;i<n;i++){
         int count = 1;
         for(int j=1;j<n;j++){
+            if(count==m) {result++; break;}
             if(Map[i][j]==Map[i][j-1]){ count++; if(count==m) {result++; break;}}
             else count = 1;
         }
@@ -22,6 +23,7 @@ int main() {
     for(int i=0;i<n;i++){
         int count = 1;
         for(int j=1;j<n;j++){
+            if(count==m) {result++; break;}
             if(Map[j][i]==Map[j-1][i]){ count++; if(count==m) {result++; break;}}
             else count = 1;
         }

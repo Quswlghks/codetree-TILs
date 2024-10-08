@@ -52,6 +52,7 @@ int calResult(){
     return result;
 }
 void Solve(){
+    Map[x][y]=2;
     while(1){
         int temp=0;
         while(1){

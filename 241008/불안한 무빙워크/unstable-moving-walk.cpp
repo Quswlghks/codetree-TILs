@@ -21,7 +21,7 @@ void rotate(){
 }
 
 void move(){
-    for(int i=0;i<n;i++){
+    for(int i=n-2;i>=0;i--){
         if(!man[i]) continue;
         if(safe[i+1]==0) continue;
         if(man[i+1]) continue;
@@ -31,6 +31,7 @@ void move(){
         safe[i+1]--;
         i++;
     }
+    man[n-1]=false;
 }
 
 void takeOne(){

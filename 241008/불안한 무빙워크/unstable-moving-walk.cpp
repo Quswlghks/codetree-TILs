@@ -21,16 +21,18 @@ void rotate(){
 }
 
 void move(){
-    for(int i=n-2;i>=0;i--){
-        if(man[i] && !man[i+1] && safe[i+1]>0){
+    for(int i=0;i<n;i++){
+        if(man[i]){
+            if(safe[i+1]==0) continue;
+            if(man[i+1]) continue;
+            if(i+1==n) man[i]=false;
             man[i]=false;
             man[i+1]=true;
             safe[i+1]--;
+            i++;
         }
     }
-    if(man[n-1]) man[n-1]=false; // n번 칸에 도달한 사람은 내려야 함
 }
-
 
 void takeOne(){
     if(man[0]==false && safe[0]!=0){

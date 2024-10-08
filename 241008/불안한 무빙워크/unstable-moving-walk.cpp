@@ -22,15 +22,14 @@ void rotate(){
 
 void move(){
     for(int i=0;i<n;i++){
-        if(man[i]){
-            if(safe[i+1]==0) continue;
-            if(man[i+1]) continue;
-            if(i+1==n) man[i]=false;
-            man[i]=false;
-            man[i+1]=true;
-            safe[i+1]--;
-            i++;
-        }
+        if(!man[i]) continue;
+        if(safe[i+1]==0) continue;
+        if(man[i+1]) continue;
+        if(i+1==n) man[i]=false;
+        man[i]=false;
+        man[i+1]=true;
+        safe[i+1]--;
+        i++;
     }
 }
 

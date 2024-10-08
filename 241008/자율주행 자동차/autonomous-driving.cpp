@@ -27,7 +27,12 @@ void turnLeft(){
 bool canGo(int d){
     int nx = x+dx[d]; int ny=y+dy[d];
     if(Map[nx][ny]!=0) return false;
-    return true;
+}
+
+bool canGoBack(int d){
+    int nx = x+dx[d]; int ny=y+dy[d];
+    if(Map[nx][ny]==2) return true;
+    return false;
 }
 
 void move(){
@@ -60,25 +65,25 @@ void Solve(){
         }
         switch(d){
             case 0:
-                if(!canGo(2)){
+                if(!canGoBack(2)){
                     cout<<calResult(); return;
                 }else{
                     x++; break;
                 }
             case 1:
-                if(!canGo(3)){
+                if(!canGoBack(3)){
                     cout<<calResult(); return;
                 }else{
                     y--; break;
                 }
             case 2:
-                if(!canGo(0)){
+                if(!canGoBack(0)){
                     cout<<calResult(); return;
                 }else{
                     x--; break;
                 }
             case 3:
-                if(!canGo(1)){
+                if(!canGoBack(1)){
                     cout<<calResult(); return;
                 }else{
                     y++; break;

@@ -14,7 +14,6 @@ struct Student{
 };
 
 Student student[401]; // ID를 인덱스로 사용하기 위해 크기를 401로 설정
-int studentOrder[401]; // 학생들의 배치 순서를 저장하는 배열
 
 int dx[4] = {0, 0, 1, -1};
 int dy[4] = {1, -1, 0, 0};
@@ -24,12 +23,11 @@ void Input(){
     for(int i = 0; i < n * n; i++){
         int n0, n1, n2, n3, n4;
         cin >> n0 >> n1 >> n2 >> n3 >> n4;
-        student[n0].id = n0;
-        student[n0].love[0] = n1;
-        student[n0].love[1] = n2;
-        student[n0].love[2] = n3;
-        student[n0].love[3] = n4;
-        studentOrder[i] = n0; // 입력된 순서대로 학생 ID 저장
+        student[i].id = n0;
+        student[i].love[0] = n1;
+        student[i].love[1] = n2;
+        student[i].love[2] = n3;
+        student[i].love[3] = n4;
     }
 }
 
@@ -37,11 +35,12 @@ bool isIn(int x, int y){
     return x >= 0 && y >= 0 && x < n && y < n;
 }
 
-void place(int Sid){
-    int l1 = student[Sid].love[0];
-    int l2 = student[Sid].love[1];
-    int l3 = student[Sid].love[2];
-    int l4 = student[Sid].love[3];
+void place(int k){
+    int Sid = student[k].id;
+    int l1 = student[k].love[0];
+    int l2 = student[k].love[1];
+    int l3 = student[k].love[2];
+    int l4 = student[k].love[3];
 
     vector<tuple<int, int, int, int>> infoList; // (numLove, numBin, x, y)
 
@@ -75,14 +74,18 @@ int calScore(){
     for(int i = 0; i < n; i++){
         for(int j = 0; j < n; j++){
             int Sid = Gigu[i][j];
+            int temp;
+            for(int z=0;z<n*n;z++){
+                if(student[z].id == Sid)  {temp = z;break;}
+            }
             int numLove = 0;
             for(int z = 0; z < 4; z++){
                 int nx = i + dx[z];
                 int ny = j + dy[z];
                 if(!isIn(nx, ny)) continue;
                 int neighbor = Gigu[nx][ny];
-                if(neighbor == student[Sid].love[0] || neighbor == student[Sid].love[1] ||
-                   neighbor == student[Sid].love[2] || neighbor == student[Sid].love[3])
+                if(neighbor == student[temp].love[0] || neighbor == student[temp].love[1] ||
+                   neighbor == student[temp].love[2] || neighbor == student[temp].love[3])
                     numLove++;
             }
             if(numLove == 0)
@@ -102,8 +105,7 @@ int calScore(){
 
 void Solve(){
     for(int i = 0; i < n * n; i++){
-        int Sid = studentOrder[i]; // 입력된 순서대로 학생 ID 사용
-        place(Sid);
+        place(i);
     }
     cout << calScore();
 }

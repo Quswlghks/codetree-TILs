@@ -26,18 +26,19 @@ void turnLeft(){
 
 bool canGo(int d){
     int nx = x+dx[d]; int ny=y+dy[d];
-    if(Map[nx][ny]!=0) return false;
+    if(Map[nx][ny]==0) return true;
+    else return false;
 }
 
 bool canGoBack(int d){
     int nx = x+dx[d]; int ny=y+dy[d];
-    if(Map[nx][ny]==2) return true;
-    return false;
+    if(Map[nx][ny]==1) return false;
+    else return true;
 }
 
 void move(){
     int nx = x+dx[d]; int ny=y+dy[d];
-    Map[nx][ny]=2;
+    Map[nx][ny] = 2;
     x=nx;y=ny;
     return;
 }
@@ -51,16 +52,27 @@ int calResult(){
     }
     return result;
 }
+
+void printMap(){
+    cout<<"\n\n";
+    for(int i=0;i<n;i++){
+        for(int j=0;j<m;j++){
+            cout<<Map[i][j]<<" ";
+        }cout<<"\n";
+    }cout<<"\n\n";
+}
+
 void Solve(){
     Map[x][y]=2;
     while(1){
         int temp=0;
         while(1){
+            if(temp>=4) break;
             turnLeft();
-            if(temp>=5) break;
             if(canGo(d)){
-                move(); temp=0;
+                move(); temp=0; //printMap();
             }else{
+                //cout<<"d: "<<d<<"\n";
                 temp++;
             }
         }
@@ -69,25 +81,30 @@ void Solve(){
                 if(!canGoBack(2)){
                     cout<<calResult(); return;
                 }else{
-                    x++; break;
+                    x++; //printMap(); 
+                    break;
                 }
             case 1:
                 if(!canGoBack(3)){
-                    cout<<calResult(); return;
+                    cout<<calResult(); 
+                    return;
                 }else{
-                    y--; break;
+                    y--; //printMap(); 
+                    break;
                 }
             case 2:
                 if(!canGoBack(0)){
                     cout<<calResult(); return;
                 }else{
-                    x--; break;
+                    x--; //printMap();
+                    break;
                 }
             case 3:
                 if(!canGoBack(1)){
                     cout<<calResult(); return;
                 }else{
-                    y++; break;
+                    y++; //printMap();
+                    break;
                 }
         }
     }

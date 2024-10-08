@@ -15,12 +15,9 @@ void rotate(){
     for(int i=2*n-1;i>=1;i--) safe[i]=safe[i-1];
     safe[0]=temp;
 
-    for(int i=0;i<n;i++){
-        if(man[i]){
-            man[i]=false;
-            if((i+1)!=n){man[i+1]=true; i++;}
-        }
-    }
+    for(int i=n-1;i>=1;i--) man[i]=man[i-1];
+    man[0]=false;
+    if(man[n-1]) man[n-1]=false; 
 }
 
 void move(){
@@ -32,8 +29,10 @@ void move(){
             man[i]=false;
             man[i+1]=true;
             safe[i+1]--;
+            i++;
         }
     }
+    if(man[n-1]) man[n-1]=false; // n번 칸에 도달한 사람은 내려야 함
 }
 
 void takeOne(){
@@ -62,13 +61,17 @@ void printStatus(){
 }
 
 void Solve(){
-    int result = 1;
+    int result = 0;
     while(1){
-        rotate();
-        move(); if(!isSafe()) break;
-        takeOne(); if(!isSafe()) break;
         result++; 
+        rotate(); //printStatus();
+        move(); //printStatus();
+        if(!isSafe()) break;
+        takeOne(); //printStatus(); 
+        if(!isSafe()) break;
+        //cout<<"iterated!\n\n";
     }
+    //printStatus();
     cout<<result;
 }
 

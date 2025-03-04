@@ -15,8 +15,8 @@ int main() {
         }
     }
 
-    for (int i = 0; i < N-3; i++) {
-        for (int j = 0; j < N-3; j++) {
+    for (int i = 0; i < N-2; i++) {
+        for (int j = 0; j < N-2; j++) {
             int temp=0;
             for(int a=0;a<3;a++){
                 for(int b=0;b<3;b++){
